@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack & Queue Simülasyonu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stack-container {
+            display: flex;
+            flex-direction: column-reverse; /* Dipten yukarı dolsun */
+            justify-content: flex-start;
+            align-items: center;
+            width: 100px;
+            height: 300px;
+            border-left: 4px solid #374151;
+            border-right: 4px solid #374151;
+            border-bottom: 4px solid #374151;
+            background-color: #f3f4f6;
+            border-radius: 0 0 8px 8px;
+            padding-bottom: 5px;
+            position: relative;
+        }
+        
+        .queue-container {
+            display: flex;
+            flex-direction: row; /* Soldan sağa */
+            justify-content: flex-start;
+            align-items: center;
+            width: 350px;
+            height: 80px;
+            border-top: 4px solid #374151;
+            border-bottom: 4px solid #374151;
+            background-color: #f3f4f6;
+            padding: 0 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Kuyruk giriş/çıkış okları */
+        .queue-container::before {
+            content: 'OUT (Ön)';
+            position: absolute;
+            left: -70px;
+            top: 25px;
+            font-size: 12px;
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .queue-container::after {
+            content: 'IN (Arka)';
+            position: absolute;
+            right: -60px;
+            top: 25px;
+            font-size: 12px;
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .data-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            transition: all 0.5s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Stack içindeki item stili */
+        .in-stack {
+            width: 80px;
+            height: 40px;
+            margin-bottom: 2px;
+            background-color: #3b82f6; /* Mavi */
+            border-radius: 4px;
+        }
+
+        /* Queue içindeki item stili */
+        .in-queue {
+            width: 40px;
+            height: 60px;
+            margin-right: 2px;
+            background-color: #10b981; /* Yeşil */
+            border-radius: 4px;
+        }
+
+        .highlight {
+            background-color: #f59e0b !important; /* Turuncu - İşlem görüyor */
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .code-highlight {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 font-sans">
+
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">QST Metodu Simülasyonu</h1>
+    <p class="text-gray-600 mb-6 text-center max-w-2xl">
+        Stack'teki elemanların Queue kullanılarak nasıl ters çevrildiğini (Reverse) izleyin.
+        <br>Başlangıç: <b>[2, 1, 9, 3, 7, 4]</b> (4 Tepede)
+    </p>
+
+    <!-- Ana Alan -->
+    <div class="flex flex-col md:flex-row gap-8 w-full max-w-5xl items-start justify-center">
+        
+        <!-- Sol Panel: Görselleştirme -->
+        <div class="flex flex-col items-center gap-8 bg-white p-6 rounded-xl shadow-lg w-full md:w-2/3">
+            
+            <!-- Stack ve Queue Konumlandırma -->
+            <div class="flex flex-col sm:flex-row items-end sm:items-center justify-center gap-12 w-full h-[400px]">
+                
+                <!-- STACK -->
+                <div class="flex flex-col items-center">
+                    <span class="font-bold text-lg mb-2 text-blue-600">STACK (s)</span>
+                    <div id="stack" class="stack-container">
+                        <!-- JS ile dolacak -->
+                    </div>
+                    <span class="text-xs text-gray-400 mt-1">Dip</span>
+                </div>
+
+                <!-- Oklar (Animasyon yönü) -->
+                <div class="flex flex-col items-center text-gray-400">
+                    <i class="fas fa-exchange-alt text-3xl"></i>
+                </div>
+
+                <!-- QUEUE -->
+                <div class="flex flex-col items-center">
+                    <span class="font-bold text-lg mb-2 text-green-600">QUEUE (q)</span>
+                    <div id="queue" class="queue-container pl-2">
+                        <!-- JS ile dolacak -->
+                    </div>
+                    <div class="flex justify-between w-full text-xs text-gray-400 mt-1 px-2">
+                        <span>Ön (Front)</span>
+                        <span>Arka (Rear)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kontrol Paneli -->
+            <div class="flex gap-4">
+                <button onclick="startAnimation()" id="btnStart" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow font-semibold transition">
+                    <i class="fas fa-play mr-2"></i> Başlat
+                </button>
+                <button onclick="resetAnimation()" id="btnReset" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg shadow font-semibold transition">
+                    <i class="fas fa-redo mr-2"></i> Sıfırla
+                </button>
+            </div>
+
+            <!-- Durum Mesajı -->
+            <div id="status-box" class="w-full bg-gray-800 text-green-400 font-mono p-3 rounded-md min-h-[50px] flex items-center justify-center text-center border border-gray-700">
+                Hazır. Başlat butonuna basın.
+            </div>
+        </div>
+
+        <!-- Sağ Panel: Kod Takibi -->
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full md:w-1/3 text-sm font-mono">
+            <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">Java Kodu (Takip Et)</h3>
+            <div class="space-y-1 text-gray-600">
+                <div id="code-line-0" class="p-1">public static void QST(Stack s) {</div>
+                <div id="code-line-1" class="p-1 pl-4">Queue q = new Queue();</div>
+                <div class="p-1 pl-4 opacity-50">// Döngü 1: Stack -> Queue</div>
+                <div id="code-line-2" class="p-1 pl-4">while (!s.empty()) {</div>
+                <div id="code-line-3" class="p-1 pl-8">E val = s.pop();</div>
+                <div id="code-line-4" class="p-1 pl-8">q.enqueue(val);</div>
+                <div id="code-line-5" class="p-1 pl-4">}</div>
+                <div class="p-1 pl-4 opacity-50">// Döngü 2: Queue -> Stack</div>
+                <div id="code-line-6" class="p-1 pl-4">while (!q.empty()) {</div>
+                <div id="code-line-7" class="p-1 pl-8">E val = q.dequeue();</div>
+                <div id="code-line-8" class="p-1 pl-8">s.push(val);</div>
+                <div id="code-line-9" class="p-1 pl-4">}</div>
+                <div id="code-line-10" class="p-1">}</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Veri Yapıları
+        let initialData = [2, 1, 9, 3, 7, 4]; // 4 tepede, 2 dipte
+        let stack = [...initialData];
+        let queue = [];
+        let isRunning = false;
+        let delayTime = 1000; // Animasyon hızı (ms)
+
+        const stackEl = document.getElementById('stack');
+        const queueEl = document.getElementById('queue');
+        const statusBox = document.getElementById('status-box');
+        const btnStart = document.getElementById('btnStart');
+
+        // Yardımcı: Bekleme fonksiyonu
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+        // Yardımcı: Ekrana Çiz
+        function render() {
+            // Stack Render
+            stackEl.innerHTML = '';
+            stack.forEach((val) => {
+                const div = document.createElement('div');
+                div.className = 'data-item in-stack';
+                div.textContent = val;
+                div.id = `item-${val}`;
+                stackEl.appendChild(div);
+            });
+
+            // Queue Render
+            queueEl.innerHTML = '';
+            queue.forEach((val) => {
+                const div = document.createElement('div');
+                div.className = 'data-item in-queue';
+                div.textContent = val;
+                div.id = `item-${val}`;
+                queueEl.appendChild(div);
+            });
+        }
+
+        // Kod satırı vurgulama
+        function highlightLine(lineIds) {
+            // Temizle
+            document.querySelectorAll('[id^="code-line-"]').forEach(el => {
+                el.classList.remove('code-highlight', 'text-gray-900');
+            });
+            // Vurgula
+            if(!Array.isArray(lineIds)) lineIds = [lineIds];
+            lineIds.forEach(id => {
+                const el = document.getElementById(`code-line-${id}`);
+                if(el) el.classList.add('code-highlight', 'text-gray-900');
+            });
+        }
+
+        // Animasyonu Başlat
+        async function startAnimation() {
+            if (isRunning) return;
+            isRunning = true;
+            btnStart.disabled = true;
+            btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // BAŞLANGIÇ
+            statusBox.textContent = "Simülasyon başlıyor...";
+            highlightLine([0, 1]);
+            await sleep(delayTime);
+
+            // --- DÖNGÜ 1: STACK -> QUEUE ---
+            statusBox.textContent = "1. AŞAMA: Stack boşalana kadar elemanlar Kuyruğa aktarılıyor.";
+            highlightLine(2);
+            await sleep(delayTime);
+
+            while (stack.length > 0) {
+                highlightLine(2); // while check
+                
+                // 1. Peek/Pop efekti
+                let val = stack[stack.length - 1]; // Tepedeki
+                statusBox.innerHTML = `Stack'ten <span class="text-blue-400 font-bold">${val}</span> çıkarılıyor (POP)...`;
+                
+                // Görsel vurgu (Stack tepesi)
+                let domItem = stackEl.lastElementChild;
+                if(domItem) domItem.classList.add('highlight');
+                
+                highlightLine(3); // s.pop()
+                await sleep(delayTime);
+
+                // 2. Veriyi taşı
+                stack.pop();
+                queue.push(val); // Enqueue
+                render(); 
+
+                // Kuyruk sonuna vurgu
+                statusBox.innerHTML = `<span class="text-green-400 font-bold">${val}</span> Kuyruğa ekleniyor (ENQUEUE)...`;
+                let queueItem = queueEl.lastElementChild;
+                if(queueItem) queueItem.classList.add('highlight');
+                
+                highlightLine(4); // q.enqueue()
+                await sleep(delayTime);
+                
+                // Vurguyu kaldır
+                if(queueItem) queueItem.classList.remove('highlight');
+            }
+
+            statusBox.textContent = "Stack artık boş. Şimdi Kuyruk Stack'e boşaltılacak.";
+            highlightLine(5);
+            await sleep(delayTime);
+
+
+            // --- DÖNGÜ 2: QUEUE -> STACK ---
+            statusBox.textContent = "2. AŞAMA: Kuyruk boşalana kadar elemanlar Stack'e geri alınıyor.";
+            highlightLine(6);
+            await sleep(delayTime);
+
+            while (queue.length > 0) {
+                highlightLine(6); // while check
+
+                // 1. Dequeue efekti
+                let val = queue[0]; // En öndeki
+                statusBox.innerHTML = `Kuyruğun önünden <span class="text-green-400 font-bold">${val}</span> alınıyor (DEQUEUE)...`;
+
+                // Görsel vurgu (Queue önü)
+                let domItem = queueEl.firstElementChild;
+                if(domItem) domItem.classList.add('highlight');
+
+                highlightLine(7); // q.dequeue()
+                await sleep(delayTime);
+
+                // 2. Veriyi taşı
+                queue.shift(); // Dequeue
+                stack.push(val); // Stack'e push
+                render();
+
+                // Stack tepesine vurgu
+                statusBox.innerHTML = `<span class="text-blue-400 font-bold">${val}</span> Stack'e itiliyor (PUSH)...`;
+                let stackItem = stackEl.lastElementChild;
+                if(stackItem) stackItem.classList.add('highlight');
+
+                highlightLine(8); // s.push()
+                await sleep(delayTime);
+
+                // Vurguyu kaldır
+                if(stackItem) stackItem.classList.remove('highlight');
+            }
+
+            // BİTİŞ
+            highlightLine(10);
+            statusBox.innerHTML = "İŞLEM TAMAMLANDI! Stack tersine çevrildi (Reverse).";
+            isRunning = false;
+            btnStart.disabled = false;
+            btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnStart.innerHTML = '<i class="fas fa-play mr-2"></i> Tekrar Başlat';
+        }
+
+        function resetAnimation() {
+            if(isRunning) return; // Çalışırken resetleme
+            stack = [...initialData];
+            queue = [];
+            render();
+            statusBox.textContent = "Hazır. Başlat butonuna basın.";
+            highlightLine([]);
+        }
+
+        // İlk açılış
+        render();
+
+    </script>
+</body>
+</html>
